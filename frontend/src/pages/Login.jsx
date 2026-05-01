@@ -14,7 +14,7 @@ const Login = () => {
 
     try {
       // Send the login data to your backend
-      const response = await axios.post('team-task-manager-production-5872.up.railway.app', {
+      const response = await axios.post('https://team-task-manager-production-5872.up.railway.app/api/auth/login', {
         email,
         password
       });

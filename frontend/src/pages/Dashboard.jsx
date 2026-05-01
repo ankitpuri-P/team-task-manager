@@ -26,7 +26,7 @@ const Dashboard = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await axios.get('team-task-manager-production-5872.up.railway.app', {
+      const response = await axios.get('https://team-task-manager-production-5872.up.railway.app', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProjects(response.data);
@@ -38,7 +38,7 @@ const Dashboard = () => {
   const handleCreateProject = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('team-task-manager-production-5872.up.railway.app', 
+      await axios.post('https://team-task-manager-production-5872.up.railway.app', 
         { name, description },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -46,14 +46,14 @@ const Dashboard = () => {
       setDescription('');
       fetchProjects();
     } catch (error) {
-      alert(error.response?.data?.error || 'Failed to create project');
+        alert(error.response?.data?.message || error.message || "An error occurred");
     }
   };
 
   const handleCreateTask = async (e, projectId) => {
     e.preventDefault();
     try {
-      await axios.post('team-task-manager-production-5872.up.railway.app',
+      await axios.post('https://team-task-manager-production-5872.up.railway.app',
         { title: taskTitle, description: taskDesc, projectId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -68,7 +68,7 @@ const Dashboard = () => {
 
   const handleStatusChange = async (taskId, newStatus) => {
     try {
-      await axios.put(`team-task-manager-production-5872.up.railway.app`,
+      await axios.put(`https://team-task-manager-production-5872.up.railway.app`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
