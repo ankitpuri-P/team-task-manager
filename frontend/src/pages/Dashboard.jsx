@@ -7,10 +7,9 @@ const Dashboard = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   
-  // Task State
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDesc, setTaskDesc] = useState('');
-  const [activeProjectId, setActiveProjectId] = useState(null); // Tracks which project we are adding a task to
+  const [activeProjectId, setActiveProjectId] = useState(null);
 
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -29,9 +28,16 @@ const Dashboard = () => {
       const response = await axios.get('https://team-task-manager-production-5872.up.railway.app/api/projects', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setProjects(response.data);
+      
+      // SAFETY CHECK: Ensure we only set projects if the response is a real list
+      if (response.data && Array.isArray(response.data)) {
+        setProjects(response.data);
+      } else {
+        setProjects([]); 
+      }
     } catch (error) {
       console.error('Failed to fetch projects', error);
+      setProjects([]); // Reset to empty list on error to prevent mapping crashes
     }
   };
 
@@ -59,8 +65,8 @@ const Dashboard = () => {
       );
       setTaskTitle('');
       setTaskDesc('');
-      setActiveProjectId(null); // Hide the form
-      fetchProjects(); // Refresh the list
+      setActiveProjectId(null);
+      fetchProjects();
     } catch (error) {
       alert(error.response?.data?.error || 'Failed to create task');
     }
@@ -72,7 +78,7 @@ const Dashboard = () => {
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      fetchProjects(); // Refresh to show the new status
+      fetchProjects();
     } catch (error) {
       alert('Failed to update status');
     }
@@ -104,26 +110,26 @@ const Dashboard = () => {
       )}
 
       <h3>Projects & Tasks</h3>
-      {projects.length === 0 ? <p>No projects yet.</p> : (
+      {/* SAFETY CHECK: Use optional chaining ?. and length check */}
+      {(!projects || projects.length === 0) ? <p>No projects yet.</p> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {projects.map((project) => (
             <div key={project.id} style={{ padding: '15px', border: '1px solid #ccc', borderRadius: '5px', background: '#fff' }}>
               <h4 style={{ margin: '0 0 5px 0', fontSize: '18px' }}>{project.name}</h4>
               <p style={{ margin: '0 0 15px 0', color: '#555' }}>{project.description}</p>
 
-              {/* TASK LIST */}
               <div style={{ marginLeft: '20px', borderLeft: '3px solid #007bff', paddingLeft: '15px' }}>
                 <h5 style={{ margin: '0 0 10px 0' }}>Tasks:</h5>
-                {project.tasks?.length === 0 ? <p style={{ fontSize: '14px', color: '#888' }}>No tasks assigned.</p> : (
+                {(!project.tasks || project.tasks.length === 0) ? <p style={{ fontSize: '14px', color: '#888' }}>No tasks assigned.</p> : (
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                    {project.tasks.map(task => (
+                    {/* SAFETY CHECK: Added ?. before map */}
+                    {project.tasks?.map(task => (
                       <li key={task.id} style={{ background: '#f4f4f4', padding: '10px', marginBottom: '5px', borderRadius: '5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <strong>{task.title}</strong>
                           <span style={{ display: 'block', fontSize: '12px', color: '#666' }}>{task.description}</span>
                         </div>
                         
-                        {/* Status Dropdown (Everyone can use this) */}
                         <select 
                           value={task.status} 
                           onChange={(e) => handleStatusChange(task.id, e.target.value)}
@@ -138,7 +144,6 @@ const Dashboard = () => {
                   </ul>
                 )}
 
-                {/* ADD TASK BUTTON & FORM (Admin Only) */}
                 {role === 'ADMIN' && (
                   <div style={{ marginTop: '10px' }}>
                     {activeProjectId === project.id ? (
