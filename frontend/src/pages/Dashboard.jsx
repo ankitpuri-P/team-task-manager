@@ -9,6 +9,10 @@ const Dashboard = () => {
   
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDesc, setTaskDesc] = useState('');
+  // --- NEW STATES FOR TASK ASSIGNMENT & DUE DATE ---
+  const [taskDueDate, setTaskDueDate] = useState('');
+  const [taskAssignedToId, setTaskAssignedToId] = useState('');
+  
   const [activeProjectId, setActiveProjectId] = useState(null);
 
   const navigate = useNavigate();
@@ -60,11 +64,21 @@ const Dashboard = () => {
     e.preventDefault();
     try {
       await axios.post('https://team-task-manager-production-5872.up.railway.app/api/tasks',
-        { title: taskTitle, description: taskDesc, projectId },
+        // --- ADDED NEW FIELDS TO API PAYLOAD ---
+        { 
+          title: taskTitle, 
+          description: taskDesc, 
+          projectId,
+          dueDate: taskDueDate || null,
+          assignedToId: taskAssignedToId ? parseInt(taskAssignedToId) : null
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      // Reset all fields
       setTaskTitle('');
       setTaskDesc('');
+      setTaskDueDate('');
+      setTaskAssignedToId('');
       setActiveProjectId(null);
       fetchProjects();
     } catch (error) {
@@ -122,36 +136,57 @@ const Dashboard = () => {
                 <h5 style={{ margin: '0 0 10px 0' }}>Tasks:</h5>
                 {(!project.tasks || project.tasks.length === 0) ? <p style={{ fontSize: '14px', color: '#888' }}>No tasks assigned.</p> : (
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                    {/* SAFETY CHECK: Added ?. before map */}
-                    {project.tasks?.map(task => (
-                      <li key={task.id} style={{ background: '#f4f4f4', padding: '10px', marginBottom: '5px', borderRadius: '5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong>{task.title}</strong>
-                          <span style={{ display: 'block', fontSize: '12px', color: '#666' }}>{task.description}</span>
-                        </div>
-                        
-                        <select 
-                          value={task.status} 
-                          onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                          style={{ padding: '5px', borderRadius: '3px', border: '1px solid #ccc' }}
-                        >
-                          <option value="PENDING">Pending</option>
-                          <option value="IN_PROGRESS">In Progress</option>
-                          <option value="COMPLETED">Completed</option>
-                        </select>
-                      </li>
-                    ))}
+                    {project.tasks?.map(task => {
+                      // --- OVERDUE LOGIC CALCULATION ---
+                      const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'COMPLETED';
+
+                      return (
+                        <li key={task.id} style={{ background: '#f4f4f4', padding: '10px', marginBottom: '5px', borderRadius: '5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <strong>
+                              {task.title}
+                              {/* --- OVERDUE BADGE --- */}
+                              {isOverdue && <span style={{ background: '#dc3545', color: 'white', padding: '2px 6px', borderRadius: '10px', fontSize: '10px', marginLeft: '8px' }}>⚠️ Overdue</span>}
+                            </strong>
+                            <span style={{ display: 'block', fontSize: '12px', color: '#666' }}>{task.description}</span>
+                            
+                            {/* --- DISPLAY ASSIGNEE AND DUE DATE --- */}
+                            <div style={{ fontSize: '11px', color: '#888', marginTop: '4px' }}>
+                              {task.assignedTo ? `Assignee: ${task.assignedTo.name}` : 'Unassigned'}
+                              {task.dueDate && <span style={{ marginLeft: '10px' }}>Due: {new Date(task.dueDate).toLocaleDateString()}</span>}
+                            </div>
+                          </div>
+                          
+                          <select 
+                            value={task.status} 
+                            onChange={(e) => handleStatusChange(task.id, e.target.value)}
+                            style={{ padding: '5px', borderRadius: '3px', border: '1px solid #ccc' }}
+                          >
+                            <option value="PENDING">Pending</option>
+                            <option value="IN_PROGRESS">In Progress</option>
+                            <option value="COMPLETED">Completed</option>
+                          </select>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
 
                 {role === 'ADMIN' && (
                   <div style={{ marginTop: '10px' }}>
                     {activeProjectId === project.id ? (
-                      <form onSubmit={(e) => handleCreateTask(e, project.id)} style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                        <input type="text" placeholder="Task Title" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} required style={{ padding: '5px', flex: 1 }} />
-                        <input type="text" placeholder="Task Desc" value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} style={{ padding: '5px', flex: 2 }} />
-                        <button type="submit" style={{ background: '#007bff', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer' }}>Save</button>
-                        <button type="button" onClick={() => setActiveProjectId(null)} style={{ background: '#ccc', border: 'none', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer' }}>Cancel</button>
+                      // --- UPDATED ADD TASK FORM TO INCLUDE DATE AND ASSIGNEE ---
+                      <form onSubmit={(e) => handleCreateTask(e, project.id)} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px', background: '#f8f9fa', padding: '10px', borderRadius: '5px' }}>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <input type="text" placeholder="Task Title" value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} required style={{ padding: '5px', flex: 1 }} />
+                          <input type="text" placeholder="Task Desc" value={taskDesc} onChange={(e) => setTaskDesc(e.target.value)} style={{ padding: '5px', flex: 2 }} />
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          <input type="date" value={taskDueDate} onChange={(e) => setTaskDueDate(e.target.value)} style={{ padding: '5px', flex: 1 }} />
+                          <input type="number" placeholder="User ID (e.g., 2)" value={taskAssignedToId} onChange={(e) => setTaskAssignedToId(e.target.value)} style={{ padding: '5px', flex: 1 }} />
+                          <button type="submit" style={{ background: '#007bff', color: 'white', border: 'none', padding: '5px 15px', borderRadius: '3px', cursor: 'pointer' }}>Save Task</button>
+                          <button type="button" onClick={() => { setActiveProjectId(null); setTaskDueDate(''); setTaskAssignedToId(''); }} style={{ background: '#ccc', border: 'none', padding: '5px 15px', borderRadius: '3px', cursor: 'pointer' }}>Cancel</button>
+                        </div>
                       </form>
                     ) : (
                       <button onClick={() => setActiveProjectId(project.id)} style={{ background: '#e9ecef', border: '1px solid #ccc', padding: '5px 10px', borderRadius: '3px', cursor: 'pointer', fontSize: '12px' }}>
