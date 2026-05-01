@@ -21,11 +21,11 @@ enum TaskStatus {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   name      String
-  email     String    @unique
-  password  String    // We will hash this later!
-  role      Role      @default(MEMBER)
+  email     String   @unique
+  password  String   
+  role      Role     @default(MEMBER)
   
   // Relationships
   projects  Project[] // Projects this user created
@@ -53,7 +53,7 @@ model Task {
   title       String
   description String?
   status      TaskStatus @default(PENDING)
-  dueDate     DateTime?
+  dueDate     DateTime?  // placed here for tasks
   
   // Which project does this task belong to?
   projectId   Int
@@ -61,7 +61,7 @@ model Task {
   
   // Who is doing this task? (Optional, can be unassigned)
   assignedToId Int?
-  assignedTo   User?      @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedTo   User?     @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
   
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
