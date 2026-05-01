@@ -3,9 +3,8 @@
 A full-stack project management and task assignment application.
 
 ## 🚀 Live Demo
-* **Frontend Application:** [Insert Live Frontend URL]
-* **Backend API:** [Insert Railway Backend URL]
-* **Demo Video:** [Insert YouTube/Drive Link]
+* **Frontend Application:** [https://team-task-manager-git-main-ankits-projects-5d44d46a.vercel.app/]
+* **Backend API:** [https://team-task-manager-production-5872.up.railway.app/]
 
 ## 🛠️ Tech Stack
 * **Frontend:** React.js, Vite, React Router, Axios
