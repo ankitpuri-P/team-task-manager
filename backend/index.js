@@ -10,11 +10,15 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
 // SIGNUP ROUTE
 router.post('/signup', async (req, res) => {
   const { name, email, password, role } = req.body;
+
+  // SAFETY CHECK: Ensure all fields are present
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: "Missing required fields: name, email, or password" });
+  }
+
   try {
-    // 1. Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // 2. Create the user in PostgreSQL
     const user = await prisma.user.create({
       data: {
         name,
@@ -26,14 +30,20 @@ router.post('/signup', async (req, res) => {
 
     res.status(201).json({ message: "User created successfully!" });
   } catch (error) {
-    // Handle duplicate email error
-    res.status(400).json({ error: "User already exists with this email" });
+    // LOG THE ERROR: This helps you see exactly why it failed in Railway Logs
+    console.error("Signup Error:", error);
+    res.status(400).json({ error: "User already exists or database error" });
   }
 });
 
 // LOGIN ROUTE
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
   try {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -44,6 +54,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ token, role: user.role });
   } catch (error) {
+    console.error("Login Error:", error);
     res.status(500).json({ error: "Server error" });
   }
 });
