@@ -26,7 +26,7 @@ const Dashboard = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await axios.get('https://team-task-manager-production-5872.up.railway.app', {
+      const response = await axios.get('https://team-task-manager-production-5872.up.railway.app/api/projects', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProjects(response.data);
@@ -38,7 +38,7 @@ const Dashboard = () => {
   const handleCreateProject = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('https://team-task-manager-production-5872.up.railway.app', 
+      await axios.post('https://team-task-manager-production-5872.up.railway.app/api/projects', 
         { name, description },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -53,7 +53,7 @@ const Dashboard = () => {
   const handleCreateTask = async (e, projectId) => {
     e.preventDefault();
     try {
-      await axios.post('https://team-task-manager-production-5872.up.railway.app',
+      await axios.post('https://team-task-manager-production-5872.up.railway.app/api/tasks',
         { title: taskTitle, description: taskDesc, projectId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -68,7 +68,7 @@ const Dashboard = () => {
 
   const handleStatusChange = async (taskId, newStatus) => {
     try {
-      await axios.put(`https://team-task-manager-production-5872.up.railway.app`,
+      await axios.put(`https://team-task-manager-production-5872.up.railway.app/api/tasks/${taskId}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
