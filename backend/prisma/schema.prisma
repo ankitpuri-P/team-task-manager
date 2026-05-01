@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// We are using PostgreSQL as required for easy Railway deployment
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Role-based access control (Admin/Member)
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  password  String    // We will hash this later!
+  role      Role      @default(MEMBER)
+  
+  // Relationships
+  projects  Project[] // Projects this user created
+  tasks     Task[]    // Tasks assigned to this user
+  
+  createdAt DateTime  @default(now())
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?  // The '?' means this is optional
+  
+  // A project is created by a specific User (Admin)
+  createdById Int
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  
+  tasks       Task[]   // A project can have many tasks
+  
+  createdAt   DateTime @default(now())
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  status      TaskStatus @default(PENDING)
+  dueDate     DateTime?
+  
+  // Which project does this task belong to?
+  projectId   Int
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Who is doing this task? (Optional, can be unassigned)
+  assignedToId Int?
+  assignedTo   User?      @relation(fields: [assignedToId], references: [id], onDelete: SetNull)
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
