@@ -10,10 +10,20 @@ const prisma = new PrismaClient();
 router.get('/', verifyToken, async (req, res) => {
   try {
     const projects = await prisma.project.findMany({
-      include: { tasks: true } // Also fetch the tasks inside each project
+      include: { 
+        tasks: {
+          include: {
+            assignedTo: {
+              select: { name: true } // THIS tells Prisma to grab the user's name!
+            }
+          }
+        } 
+      },
+      orderBy: { createdAt: 'desc' } // Shows the newest projects at the top
     });
     res.json(projects);
   } catch (error) {
+    console.error("Fetch Projects Error:", error);
     res.status(500).json({ error: 'Failed to fetch projects' });
   }
 });
@@ -33,12 +43,13 @@ router.post('/', verifyToken, async (req, res) => {
       data: {
         name,
         description,
-        createdById: req.user.userId // We get this from the verified token!
+        createdById: req.user.userId || req.user.id // Safely handles either token format
       }
     });
 
     res.status(201).json(newProject);
   } catch (error) {
+    console.error("Create Project Error:", error);
     res.status(500).json({ error: 'Failed to create project' });
   }
 });
