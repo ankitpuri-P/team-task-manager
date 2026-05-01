@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -66,6 +66,9 @@ const Login = () => {
           Login
         </button>
       </form>
+      <p style={{ textAlign: 'center', fontSize: '14px', marginTop: '15px' }}>
+        Don't have an account? <Link to="/signup" style={{ color: '#007bff', textDecoration: 'none', fontWeight: 'bold' }}>Sign up here</Link>
+      </p>
     </div>
   );
 };
