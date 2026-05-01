@@ -1,62 +1,36 @@
 const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
+const cors = require('cors');
+require('dotenv').config();
 
-const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_key';
+const app = express();
 
-// SIGNUP ROUTE
-router.post('/signup', async (req, res) => {
-  const { name, email, password, role } = req.body;
+// CRITICAL: CORS must be configured BEFORE routes
+app.use(cors({
+  origin: '*', 
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-  // SAFETY CHECK: Ensure all fields are present
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: "Missing required fields: name, email, or password" });
-  }
+// Handles the "Preflight" check browsers do before signing up
+app.options('*', cors()); 
 
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: role || 'MEMBER',
-      },
-    });
+app.use(express.json());
 
-    res.status(201).json({ message: "User created successfully!" });
-  } catch (error) {
-    // LOG THE ERROR: This helps you see exactly why it failed in Railway Logs
-    console.error("Signup Error:", error);
-    res.status(400).json({ error: "User already exists or database error" });
-  }
+// Import the router logic
+const authRoutes = require('./routes/auth');
+const projectRoutes = require('./routes/projects');
+const taskRoutes = require('./routes/tasks');
+
+// Use the routes
+app.use('/api/auth', authRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/tasks', taskRoutes);
+
+app.get('/', (req, res) => {
+  res.send('Task Manager API is live!');
 });
 
-// LOGIN ROUTE
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password are required" });
-  }
-
-  try {
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
-
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
-    res.json({ token, role: user.role });
-  } catch (error) {
-    console.error("Login Error:", error);
-    res.status(500).json({ error: "Server error" });
-  }
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
-
-module.exports = router;
